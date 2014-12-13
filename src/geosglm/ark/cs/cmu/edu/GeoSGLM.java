@@ -313,7 +313,7 @@ public class GeoSGLM {
 	int numFeatures;
 
 	// number of threads
-	int numThreads = 2;
+	int numThreads = 16;
 	// H x V hidden->output layer weights
 	float[][] outputWeights;
 
