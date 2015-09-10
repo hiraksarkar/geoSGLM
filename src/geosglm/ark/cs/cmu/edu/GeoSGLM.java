@@ -90,7 +90,15 @@ public class GeoSGLM {
 					try {
 
 						String[] cols = str1.trim().split("\t");
-						String location = cols[1];
+                                                Random random    = new Random();
+                                                ArrayList<String>locations = new ArrayList<String>(featureMap.keySet());
+                                                locations.remove("MAIN");
+                                                String location = "";
+                                                if (randomize > 0) {
+                                                        location = locations.get(random.nextInt(locations.size()));
+                                                } else {
+                                                        location = cols[1];
+                                                }
 						String message = cols[2];
 						String[] words = message.toLowerCase().split(" ");
 
@@ -255,11 +263,15 @@ public class GeoSGLM {
 		// L2 regularization term
 		double L2 = Double.valueOf(args[6]);
 
+                // Randomize
+                int randomize = Integer.valueOf(args[7]);
+
 		GeoSGLM model = new GeoSGLM();
 
 		model.hiddenLayerSize = hiddenLayerSize;
 		model.maxVocab = maxVocab;
 		model.L2 = L2;
+                model.randomize = randomize;
 
 		model.setFeatures(featureFile);
 		model.setVocab(vocabFile, inputData);
@@ -313,7 +325,7 @@ public class GeoSGLM {
 	int numFeatures;
 
 	// number of threads
-	int numThreads = 16;
+	int numThreads = 64;
 	// H x V hidden->output layer weights
 	float[][] outputWeights;
 
@@ -334,6 +346,8 @@ public class GeoSGLM {
 	long totalWordCount = 0L;
 	// count of current words seen among all threads
 	long totalWordsSeen = 0;
+
+	int randomize = 0;
 
 	Word[] vocab;
 
@@ -683,6 +697,9 @@ public class GeoSGLM {
 					totalTweets++;
 
 					String[] bigparts = str1.trim().split("\t");
+                                        if (bigparts.length < 3) {
+                                           continue;
+                                        }
 					String words = bigparts[2];
 					String[] parts = words.toLowerCase().split(" ");
 
