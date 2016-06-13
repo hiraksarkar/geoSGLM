@@ -47,9 +47,10 @@ def normalize(embeddings):
 # get all active facets in embeddings
 def getFacets(filename):
 	file=open(filename)
-
 	facets={}
-	for line in file:
+	for i, line in enumerate(file):
+                if i == 0:
+                   continue
 		cols=line.rstrip().split(" ")
 		facets[cols[0]]=1
 	file.close()
