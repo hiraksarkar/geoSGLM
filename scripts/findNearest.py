@@ -8,6 +8,15 @@ import sys,math,operator
 import numpy as np
 from numpy import linalg as LA
 
+
+def get_embeddings(word, embeddings):
+	word_emb = {}
+    	for n in sorted(embeddings):
+        	if word in embeddings[n]:
+			    word_emb[n] = embeddings[n][word]
+	return word_emb
+
+
 def find(word, data, name):
 	print "Finding: %s in %s" % (word, name)
 	scores={}
@@ -69,7 +78,7 @@ def process(filename):
 
 	# if you want to only consider a few metadata facets and not all 51 states, do that here.  e.g.:
 	# facets=["MA", "PA"]
-
+	facets = facets + ['MAIN']
 	for facet in facets:
 		embeddings[facet]={}
 
