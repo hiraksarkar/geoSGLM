@@ -5,5 +5,6 @@ here=$(dirname $0)
 CLASSES=$here/bin
 CLASSES=$CLASSES:$(echo $here/lib/*.jar | tr ' ' :)
 CLASSES=$CLASSES:$here/geoSGLM.jar
+CLASSES=$CLASSES:$here/json-io-4.5.0.jar
 
 java -XX:ParallelGCThreads=2 -Xmx8000m -ea -classpath $CLASSES $*

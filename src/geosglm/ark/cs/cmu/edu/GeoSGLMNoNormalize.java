@@ -1,5 +1,6 @@
 package geosglm.ark.cs.cmu.edu;
 
+import java.io.File;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
@@ -21,6 +22,10 @@ import org.apache.commons.io.input.BoundedInputStream;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+
+import com.cedarsoftware.util.io.JsonReader;
+import com.cedarsoftware.util.io.JsonWriter;
+ 
 
 /**
  * Code for learning geographically-informed word embeddings, as used in Bamman
@@ -57,6 +62,43 @@ public class GeoSGLMNoNormalize {
 					"Starting thread %d, byte offset: %s-%s", id, start, end));
 
 		}
+
+        public double score_word_pair(String o, String c, String location) {
+            // Compute P(o|c,location)
+    		double[] cvec = new double[hiddenLayerSize];
+			HashSet<Integer> activeFeatures = getFeatures(location);
+			Integer oid = vocabIds.get(o);
+			Word oword = vocab[oid];
+            Integer cid = vocabIds.get(c);
+            Word cword = vocab[cid];
+			for (int k = 0; k < hiddenLayerSize; k++) {
+                for (int z : activeFeatures) {
+					cvec[k] += embeddings[z][cid][k];
+				}
+            }
+            double prob = 1.0;
+			for (int j = 0; j < oword.codeLength; j++) {
+				double f = 0;
+				for (int k = 0; k < hiddenLayerSize; k++) {
+					f += cvec[k] * outputWeights[k][oword.point[j]];
+				}
+				if (f <= -MAX_EXP) {
+					continue;
+				} else if (f >= MAX_EXP) {
+					continue;
+				}
+				else {
+					f = expTable[(int) ((f + MAX_EXP) * (EXP_TABLE_SIZE
+						/ (double) MAX_EXP / 2.))];
+				}
+                double prob_code = f;
+                if(oword.code[j] == 0) {
+                    prob_code = 1.0 - f;
+                }    
+                prob = prob * prob_code;
+            }
+           return prob; 
+        }
 
 		/**
 		 * Run backprop on this thread's subset of the data. To process large
@@ -285,8 +327,16 @@ public class GeoSGLMNoNormalize {
 		}
 		System.out.println();
 		model.write(outputFile);
+        try {
+            File file = new File("test.json");
+            FileOutputStream outStream = new FileOutputStream(file);
+            JsonWriter writer = new JsonWriter(outStream);
+            writer.write(model);
+        } catch (FileNotFoundException e) {
+            return;
+        }
+    }
 
-	}
 
 	double alpha = 0.025;
 
