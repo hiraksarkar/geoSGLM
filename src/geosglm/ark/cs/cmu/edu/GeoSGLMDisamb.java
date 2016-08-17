@@ -12,6 +12,7 @@ import java.io.OutputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -40,22 +41,86 @@ import com.cedarsoftware.util.io.JsonWriter;
  * 
  */
 public class GeoSGLMDisamb {
+    HashMap<String, HashMap<String , Double>> vocabProb;
+
+    public GeoSGLMDisamb() {
+        vocabProb = Maps.newHashMap();
+    }
+   
+    // Return log probability by just taking the log.
+    public double score_word_pair(String w, String c, GeoSGLMNoNormalize model_n, String domain) {
+        double score = model_n.score_word_pair(w, c, domain);
+        double prior = vocabProb.get(domain).get(c);
+        System.out.println(String.format("%s %s %s %.6f %.6f %.6f", w, c, domain, score, prior, score*prior));
+        return Math.log10(score * prior);
+    } 
+
+	public void setVocab(String vocabFile, String domain) {
+	    HashMap<String, Double> vocabCounts;
+		vocabCounts = Maps.newHashMap();
+		try {
+			BufferedReader in1 = new BufferedReader(new InputStreamReader(
+					new FileInputStream(vocabFile), "UTF-8"));
+			String str1;
+			int c = 0;
+			// Read valid vocab from file
+			while ((str1 = in1.readLine()) != null) {
+				try {
+					String[] parts = str1.trim().split("\t");
+					String word = parts[1];
+                    Double word_freq = Double.parseDouble(parts[0]);
+					vocabCounts.put(word, word_freq);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+			in1.close();
+        } catch (Exception e){
+             e.printStackTrace();
+        }   
+        Double sum = 0.0;
+        for (HashMap.Entry<String, Double> entry : vocabCounts.entrySet()) {
+                sum += entry.getValue();
+        }
+
+        for (HashMap.Entry<String, Double> entry : vocabCounts.entrySet()) {
+            entry.setValue(entry.getValue()/sum);
+        }
+        vocabProb.put(domain, vocabCounts);
+    }     
+
 	public static void main(String[] args) {
     	// Read JSON From InputStream
     	InputStream inStream = null;
         try {
-      		inStream = new FileInputStream("test.json");
+      		inStream = new FileInputStream(args[0]);
       		JsonReader reader = new JsonReader(inStream);
       		GeoSGLMNoNormalize model_n = (GeoSGLMNoNormalize) reader.readObject();
+            GeoSGLMDisamb disamb = new GeoSGLMDisamb();
+            String location1 = args[1];
+            String vocab_one = args[2];
+            String location2 = args[3];
+            String vocab_two = args[4];
+            disamb.setVocab(vocab_one, location1);
+            disamb.setVocab(vocab_two, location2);
+            System.out.println(String.format("%s:%.6f", location1, disamb.vocabProb.get(location1).get("the")));
             Scanner input = new Scanner(System.in);
             System.out.println("Enter a word:");
             while (input.hasNext()) {
                 String str = input.nextLine();
                 String[] tokens = str.split(" ");
-                double sports = model_n.score_word_pair(tokens[0], tokens[1], "sports");
-                double finance = model_n.score_word_pair(tokens[0], tokens[1], "business");
-                double wikipedia = model_n.score_word_pair(tokens[0], tokens[1], "wiki");
-                System.out.println(String.format("sports=%.6f finance=%.6f, wikipedia=%.6f",sports, finance, wikipedia));
+                String w = tokens[0];
+                String[] context_words = Arrays.copyOfRange(tokens, 1, tokens.length); 
+                double tploc1 = Math.log10(1.0);
+                double tploc2 = Math.log10(1.0);
+                for (String cw: context_words) {
+                    double sloc1 = disamb.score_word_pair(w, cw, model_n, location1);
+                    double sloc2 = disamb.score_word_pair(w, cw, model_n, location2);
+                    tploc1 = tploc1 + sloc1;
+                    tploc2 = tploc2 + sloc2;
+                    System.out.println(String.format("%s:%s %s=%.6f %s=%.6f",w, cw, location1, sloc1, location2, sloc2));
+                }
+               System.out.println(String.format("Final %s: %s=%.6f %s=%.6f",w, location1, tploc1, location2, tploc2));
             }
     	} catch (FileNotFoundException e) {
      		 e.printStackTrace();
