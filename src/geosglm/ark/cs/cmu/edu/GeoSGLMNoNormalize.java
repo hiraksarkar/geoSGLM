@@ -311,6 +311,9 @@ public class GeoSGLMNoNormalize {
                 // Randomize
                 int randomize = Integer.valueOf(args[7]);
 
+		// JSON output filename
+		String jsonOutFilename = args[8];
+
 		GeoSGLMNoNormalize model = new GeoSGLMNoNormalize();
 	
 
@@ -332,7 +335,7 @@ public class GeoSGLMNoNormalize {
 		model.write(outputFile);
 		
         try {
-            File file = new File("test.json");
+            File file = new File(jsonOutFilename);
             FileOutputStream outStream = new FileOutputStream(file);
             JsonWriter writer = new JsonWriter(outStream);
             writer.write(model);
@@ -343,7 +346,7 @@ public class GeoSGLMNoNormalize {
     	// Read JSON From InputStream
     	InputStream inStream = null;
         try {
-      		inStream = new FileInputStream("test.json");
+      		inStream = new FileInputStream(jsonOutFilename);
       		JsonReader reader = new JsonReader(inStream);
       		GeoSGLMNoNormalize model_n = (GeoSGLMNoNormalize) reader.readObject();
     	} catch (FileNotFoundException e) {
