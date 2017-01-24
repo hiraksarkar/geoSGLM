@@ -38,7 +38,7 @@ import com.cedarsoftware.util.io.JsonWriter;
  * https://code.google.com/p/word2vec/ (Apache 2.0)
  * 
  */
-public class GeoSGLMNoNormalize {
+public class GeoSGLMNormalize {
 
 	public class DataSubsetThread extends Thread {
 
@@ -107,7 +107,7 @@ public class GeoSGLMNoNormalize {
                                                         location = cols[1];
                                                 }
 						String message = cols[2];
-						String[] words = message.split(" ");
+						String[] words = message.toLowerCase().split(" ");
 
 						HashSet<Integer> activeFeatures = getFeatures(location);
 						ArrayList<Word> newparts = Lists.newArrayList();
@@ -314,7 +314,7 @@ public class GeoSGLMNoNormalize {
 		// JSON output filename
 		String jsonOutFilename = args[8];
 
-		GeoSGLMNoNormalize model = new GeoSGLMNoNormalize();
+		GeoSGLMNormalize model = new GeoSGLMNormalize();
 	
 
 		model.hiddenLayerSize = hiddenLayerSize;
@@ -348,7 +348,7 @@ public class GeoSGLMNoNormalize {
         try {
       		inStream = new FileInputStream(jsonOutFilename);
       		JsonReader reader = new JsonReader(inStream);
-      		GeoSGLMNoNormalize model_n = (GeoSGLMNoNormalize) reader.readObject();
+      		GeoSGLMNormalize model_n = (GeoSGLMNormalize) reader.readObject();
     	} catch (FileNotFoundException e) {
      		 e.printStackTrace();
     	}
@@ -769,7 +769,7 @@ public class GeoSGLMNoNormalize {
                                            continue;
                                         }
 					String words = bigparts[2];
-					String[] parts = words.split(" ");
+					String[] parts = words.toLowerCase().split(" ");
 
 					normalizeWords(parts);
 					for (String word : parts) {
